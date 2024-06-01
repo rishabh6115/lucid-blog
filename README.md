@@ -93,7 +93,7 @@ This repository contains a full-stack application with a Node.js backend and a V
     npm run dev
     ```
 
-2. The frontend application should now be running on `http://localhost:3000`.
+2. The frontend application should now be running on `http://localhost:5173`.
 
 ## Common Issues
 
@@ -104,7 +104,7 @@ This repository contains a full-stack application with a Node.js backend and a V
 
 ### Frontend
 
-- **Port Conflicts**: Ensure the port `3000` is not being used by another application.
+- **Port Conflicts**: Ensure the port `5173` is not being used by another application.
 - **Environment Variables**: Ensure any necessary environment variables are correctly set up.
 
 ## Additional Scripts
