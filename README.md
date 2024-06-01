@@ -1,5 +1,4 @@
-# Project Name
-
+# Blog
 This repository contains a full-stack application with a Node.js backend and a Vite + React frontend.
 
 ## Table of Contents
