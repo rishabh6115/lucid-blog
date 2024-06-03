@@ -9,8 +9,12 @@ import {
   CardActions,
   CardContent,
   Container,
+  FormControl,
   Grid,
+  InputLabel,
+  MenuItem,
   Pagination,
+  Select,
 } from "@mui/material";
 
 import LoadingButton from "@/components/LoadingButton";
@@ -22,6 +26,12 @@ import { useNavigate } from "react-router-dom";
 import EditModal from "@/components/EditModal";
 import Profile from "@/components/Profile";
 import { displayedString, getIndianDate } from "@/utils";
+import {
+  useUserGetFollowedUsers,
+  useUserGetSlackChannels,
+  useUserSaveChannelId,
+} from "@/hooks/userHooks";
+import { useSelector } from "react-redux";
 
 function CustomTabPanel(props) {
   const { children, value, index, ...other } = props;
@@ -58,8 +68,14 @@ function a11yProps(index) {
 
 export default function Dashboard() {
   const [value, setValue] = useState(Number(localStorage.getItem("tab")) || 0);
-
+  const { data: followedUsers, isLoading: followedUsersLoading } =
+    useUserGetFollowedUsers();
   const { mutateAsync: deletePost } = usePostDelete();
+  const { data: slackChannels, isLoading: slackChannelsLoading } =
+    useUserGetSlackChannels();
+  const { mutateAsync: saveID } = useUserSaveChannelId();
+  const [channelIdSaveLoading, setChannelIdSaveLoading] = useState(false);
+  const isSlackUser = useSelector((state) => state.user?.user?.isSlack);
 
   const [loading, setLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
@@ -69,12 +85,13 @@ export default function Dashboard() {
   });
   const [currentDeletingPost, setCurrentDeletingPost] = useState(null);
 
+  const [selectedChannel, setSelectedChannel] = useState("");
+
   useEffect(() => {
     localStorage.setItem("tab", value);
   }, [value]);
 
-  console.log(localStorage.getItem("tab"));
-
+  const channel_id = useSelector((state) => state.user?.user?.channel_id);
   const nav = useNavigate();
 
   const handlePageChange = (_, value) => {
@@ -106,6 +123,30 @@ export default function Dashboard() {
       setLoading(false);
     }
   };
+  const handleChannelSave = async () => {
+    try {
+      setChannelIdSaveLoading(true);
+      await saveID({ channel_id: selectedChannel });
+      toast.success("Channel id saved successfully.You will receive updates");
+      setChannelIdSaveLoading(false);
+    } catch (error) {
+      setChannelIdSaveLoading(false);
+      console.log(error);
+      toast.error(
+        error?.response?.data?.message || "Failed to save channel id"
+      );
+    }
+  };
+
+  const getValue = (selectedChannel) => {
+    if (selectedChannel) return null;
+    if (channel_id) {
+      return slackChannels?.channels.find(
+        (channel) => channel.id === channel_id
+      )?.id;
+    }
+    return null;
+  };
 
   if (isLoading) {
     return <LoadingScreen />;
@@ -121,6 +162,8 @@ export default function Dashboard() {
         >
           <Tab label="Profile" {...a11yProps(0)} />
           <Tab label="My Blogs" {...a11yProps(1)} />
+          <Tab label="Followed Authors" {...a11yProps(2)} />
+          {isSlackUser && <Tab label="Slack Channel" {...a11yProps(3)} />}
         </Tabs>
       </Box>
       <CustomTabPanel value={value} index={0}>
@@ -169,7 +212,7 @@ export default function Dashboard() {
                           color="text.secondary"
                           sx={{ mt: 2 }}
                         >
-                          By {post.author.name} on{" "}
+                          By {post?.author?.name} on{" "}
                           {getIndianDate(post.createdAt)}
                         </Typography>
                       </CardContent>
@@ -223,6 +266,98 @@ export default function Dashboard() {
           </Box>
         </>
       </CustomTabPanel>
+      <CustomTabPanel value={value} index={2}>
+        <Box sx={{ my: 4 }}>
+          <Grid container spacing={3}>
+            {followedUsersLoading && <LoadingScreen />}
+            {followedUsers?.following &&
+              followedUsers?.following.map((user) => (
+                <Grid
+                  item
+                  xs={12}
+                  sm={6}
+                  md={4}
+                  key={user._id}
+                  sx={{ cursor: "pointer" }}
+                >
+                  <Card
+                    sx={{ height: "100%" }}
+                    onClick={() => {
+                      nav(`/profile/${user._id}`);
+                    }}
+                  >
+                    <CardContent>
+                      <Typography
+                        variant="h5"
+                        component="div"
+                        sx={{ fontWeight: "bold" }}
+                      >
+                        {user.name}
+                      </Typography>
+                      <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        sx={{ mt: 1 }}
+                      >
+                        {user.email}
+                      </Typography>
+                    </CardContent>
+                  </Card>
+                </Grid>
+              ))}
+          </Grid>
+        </Box>
+      </CustomTabPanel>
+      {isSlackUser && (
+        <CustomTabPanel value={value} index={3}>
+          {slackChannelsLoading && <LoadingScreen />}
+          <Box>
+            <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+              <Typography variant="h5" sx={{ mb: 4 }}>
+                Select a channel
+              </Typography>
+              {channel_id && (
+                <Button
+                  variant="contained"
+                  color="error"
+                  size="small"
+                  sx={{ alignSelf: "baseline" }}
+                >
+                  {channel_id}
+                </Button>
+              )}
+            </Box>
+            <Box sx={{ minWidth: 120 }}>
+              <FormControl fullWidth>
+                <InputLabel id="demo-simple-select-label">Channels</InputLabel>
+                <Select
+                  labelId="demo-simple-select-label"
+                  id="demo-simple-select"
+                  value={getValue(selectedChannel) || selectedChannel}
+                  label="Channels"
+                  onChange={(e) => setSelectedChannel(e.target.value)}
+                >
+                  {slackChannels?.channels.map((channel) => (
+                    <MenuItem value={channel.id} key={channel.id}>
+                      {channel.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Box>
+            {selectedChannel && (
+              <LoadingButton
+                variant="contained"
+                sx={{ mt: 2, minWidth: 200 }}
+                onClick={handleChannelSave}
+                isLoading={channelIdSaveLoading}
+              >
+                Save
+              </LoadingButton>
+            )}
+          </Box>
+        </CustomTabPanel>
+      )}
     </Container>
   );
 }

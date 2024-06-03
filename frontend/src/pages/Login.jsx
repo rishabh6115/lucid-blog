@@ -5,6 +5,7 @@ import {
   Typography,
   TextField,
   Grid,
+  Button,
 } from "@mui/material";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import { Link, useNavigate } from "react-router-dom";
@@ -125,6 +126,20 @@ const Login = () => {
               Sign In
             </LoadingButton>
           </form>
+          <Button
+            variant="contained"
+            color="secondary"
+            fullWidth
+            sx={{ mb: 2, padding: "10px 0", fontSize: "16px" }}
+            onClick={(event) => {
+              event.preventDefault();
+              window.location.href = `${
+                import.meta.env.VITE_BACKEND_URL_SLACK
+              }/auth/slack`;
+            }}
+          >
+            Login with Slack
+          </Button>
           <Grid container justifyContent="flex-end">
             <Grid item>
               <Link to="/signup" variant="body2">

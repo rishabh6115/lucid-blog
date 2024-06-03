@@ -90,7 +90,7 @@ const Homepage = () => {
                           color="text.secondary"
                           sx={{ mt: 2 }}
                         >
-                          By {post.author.name} on{" "}
+                          By {post?.author?.name} on{" "}
                           {getIndianDate(post.createdAt)}
                         </Typography>
                       </CardContent>

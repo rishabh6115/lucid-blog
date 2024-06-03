@@ -15,7 +15,31 @@ const userSchema = mongoose.Schema(
     },
     password: {
       type: String,
-      requried: true,
+    },
+    following: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+      },
+    ],
+    followers: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+      },
+    ],
+    isSlack: {
+      type: Boolean,
+      default: false,
+    },
+    user_access_token: {
+      type: String,
+    },
+    bot_user_access_token: {
+      type: String,
+    },
+    channel_id: {
+      type: String,
     },
   },
   { timestamps: true }

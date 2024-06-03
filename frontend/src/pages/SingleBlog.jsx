@@ -32,8 +32,7 @@ const Blogs = () => {
         content: newComment,
         postId: id,
       };
-      const data = await addComment(dataToSend);
-      console.log("Submitted comment:", data);
+      await addComment(dataToSend);
       toast.success("Comment added successfully");
       setNewComment("");
       setLoading(false);

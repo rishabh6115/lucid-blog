@@ -2,6 +2,7 @@ const asyncHandler = require("express-async-handler");
 const Post = require("../modals/PostModal");
 const Comment = require("../modals/commentModal");
 const User = require("../modals/UserModal");
+const { default: axios } = require("axios");
 
 const createPost = asyncHandler(async (req, res) => {
   try {
@@ -15,9 +16,38 @@ const createPost = asyncHandler(async (req, res) => {
       author: req.user._id,
     });
 
-    if (post) {
-      res.status(201).json({ message: "Post created Successfully" });
+    const user = await User.findById(req.user._id).populate("followers");
+    if (user.followers.length === 0 && post) {
+      return res.status(201).json({ message: "Post created Successfully" });
     }
+
+    for (singleFollower of user.followers) {
+      if (
+        singleFollower.isSlack &&
+        singleFollower.channel_id &&
+        singleFollower.bot_user_access_token
+      ) {
+        const response = await axios.post(
+          "https://slack.com/api/chat.postMessage",
+          {
+            channel: singleFollower.channel_id,
+            text: `${user.name} made a new post. You are following the author`,
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${singleFollower.bot_user_access_token}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+        if (response.data.ok) {
+          console.log("Message sent successfully");
+        } else {
+          console.error("Failed to send message:", response.data);
+        }
+      }
+    }
+    res.status(201).json({ message: "Post created Successfully" });
   } catch (error) {
     throw new Error(error.message);
   }
@@ -121,13 +151,41 @@ const addComments = asyncHandler(async (req, res) => {
     }
     const post = await Post.findByIdAndUpdate(postId, {
       $push: { comments: comment._id },
-    });
+    }).populate("author");
 
     if (!post) {
       res.status(400);
       throw new Error("Post not found");
     }
 
+    if (post.author.isSlack === false || !post.author.channel_id) {
+      return res.status(201).json({ message: "Comment added" });
+    }
+
+    const accessToken = post?.author?.bot_user_access_token;
+    if (!accessToken) {
+      return res.status(201).json({ message: "Comment added" });
+    }
+
+    const response = await axios.post(
+      "https://slack.com/api/chat.postMessage",
+      {
+        channel: post.author.channel_id,
+        text: `You have recevied a new comment on your post "${post.heading}" from ${req.user.name}`,
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    if (response.data.ok) {
+      console.log("Message sent successfully");
+    } else {
+      console.error("Failed to send message:", response.data);
+    }
     res.status(201).json({ message: "Comment added" });
   } catch (error) {
     throw new Error(error.message);

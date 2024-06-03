@@ -1,4 +1,10 @@
-import { Route, Routes } from "react-router-dom";
+import {
+  Route,
+  Routes,
+  useLocation,
+  useParams,
+  useSearchParams,
+} from "react-router-dom";
 import Homepage from "./pages/Homepage";
 import { Toaster } from "react-hot-toast";
 import ProtectedRoutes from "./Routes/ProtectedRoutes";
@@ -18,12 +24,16 @@ import NonCheckRoutes from "./Routes/NonCheckRoutes";
 import ProfilePage from "./pages/ProfilePage";
 
 const App = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
   const { data, isLoading } = useUserGet();
   const dispatch = useDispatch();
 
   useEffect(() => {
     if (data) {
       dispatch(signIn(data));
+    } else if (searchParams.get("user")) {
+      dispatch(signIn(JSON.parse(searchParams.get("user"))));
+      setSearchParams();
     }
   }, [data, dispatch]);
 
@@ -33,7 +43,7 @@ const App = () => {
 
   return (
     <>
-      <Toaster position="top-right" />
+      <Toaster />
       <CssBaseline />
       <Routes>
         <Route element={<NonCheckRoutes />}>

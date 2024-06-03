@@ -2,7 +2,7 @@ import axios from "axios";
 
 const AxiosClient = axios.create();
 
-AxiosClient.defaults.baseURL = import.meta.env.VITE_BACKEND_URL;
+AxiosClient.defaults.baseURL = import.meta.env.VITE_BACKEND_URL_SLACK;
 
 AxiosClient.defaults.headers = {
   "Content-Type": "application/json",

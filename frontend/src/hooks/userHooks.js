@@ -1,6 +1,11 @@
 import {
+  followUser,
+  getFollowedUsers,
   getSingeUser,
   getUser,
+  getUserSlackChannels,
+  saveChannelId,
+  unfollowUser,
   userLogin,
   userSignup,
   userUpdate,
@@ -44,5 +49,53 @@ export const useUserGetSingle = ({ id }) => {
     queryKey: ["single-user", id],
     refetchOnWindowFocus: false,
     retry: false,
+  });
+};
+
+export const useUserFollow = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id }) => followUser({ id }),
+    onSuccess: () => {
+      queryClient.invalidateQueries(["user"]);
+    },
+  });
+};
+
+export const useUserUnfollow = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id }) => unfollowUser({ id }),
+    onSuccess: () => {
+      queryClient.invalidateQueries(["user"]);
+    },
+  });
+};
+
+export const useUserGetFollowedUsers = () => {
+  return useQuery({
+    queryFn: () => getFollowedUsers(),
+    queryKey: ["followed-users"],
+    refetchOnWindowFocus: false,
+    retry: false,
+  });
+};
+
+export const useUserGetSlackChannels = () => {
+  return useQuery({
+    queryFn: () => getUserSlackChannels(),
+    queryKey: ["slack-channels"],
+    refetchOnWindowFocus: false,
+    retry: false,
+  });
+};
+
+export const useUserSaveChannelId = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ channel_id }) => saveChannelId({ channel_id }),
+    onSuccess: () => {
+      queryClient.invalidateQueries(["user"]);
+    },
   });
 };
